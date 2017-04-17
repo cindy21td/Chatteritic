@@ -1,7 +1,7 @@
-*** Quick guide ***
+# Quick guide
 
-** Start Server **
+## Start Server
 `npm start`
 
-** Start Client **
+## Start Client
 `node server.js`
