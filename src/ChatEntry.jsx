@@ -1,9 +1,13 @@
 import React from 'react';
 
+import FlatButton from 'material-ui/FlatButton';
+import TextField from 'material-ui/TextField';
+
 export default class ChatEntry extends React.Component {
 
 	static propTypes = {
     	onEnter: React.PropTypes.func,
+    	nameIsTaken: React.PropTypes.bool,
   	};
 	
 	constructor(props) {
@@ -30,9 +34,8 @@ export default class ChatEntry extends React.Component {
 	render() {
 		return (
 			<div>
-				<label>User name:</label>
-				<input type="text" value={this.state.username} onChange={this.onUsernameChange}/>
-				<button onClick={this.onUsernameEnter}> Enter chat room </button>
+				<TextField name="username" floatingLabelText="Username" value={this.state.username} onChange={this.onUsernameChange} errorText={this.props.nameIsTaken ? "Username is already taken." : ''}/>
+				<FlatButton onClick={this.onUsernameEnter} label="Enter chat room" />
 			</div>
 		)
 	}

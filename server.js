@@ -3,13 +3,19 @@
 //import open from 'open';  
 
 const express = require('express');
+const webpackdevMiddleware = require('webpack-dev-middleware');
+const webpack = require('webpack');
+const webpackConfig = require('./webpack.config.js');
+
 const path = require('path');
 const open = require('open');
 
 /* eslint-disable no-console */
 
-const port = 4000;  
+const port = 3000;  
 const app = express();  
+
+const compiler = webpack(webpackConfig);
 
 // User details
 const userToUser = {};
@@ -24,34 +30,63 @@ function getUserValues() {
 	return lst;
 }
 
-app.get('*', function(req, res) {  
-  res.sendFile(path.join( __dirname, '../src/index.html'));
+//app.use(express.static(__dirname + '/public'));
+ 
+app.use(webpackdevMiddleware(compiler, {
+  hot: true,
+  //filename: 'bundle.js',
+  publicPath: '/',
+  stats: {
+    colors: true,
+  },
+  historyApiFallback: true,
+}));
+
+
+app.get('/', function(req, res) {
+    res.sendFile(path.join(__dirname, '/public/', 'index.html'));
 });
 
-const server = app.listen(port, function(err) {  
+//app.get('*', function(req, res) {  
+//  res.sendFile(path.join( __dirname, '../public/index.html'));
+//});
+
+const server = app.listen(port, function(err) { 
+/* 
   if (err) {
     console.log(err);
   } else {
     open(`http://localhost:${port}`);
   }
+*/  
 });
 
 const io = require('socket.io')(server);
 
 io.on('connection', (socket) => {  
 	console.log('connected! => ' + socket.id);
+	console.log(__dirname);
 	socket.on('new user', function(username) {
-		console.log('Welcome, ' + username);
+		if (userToId[username] == null) {
+			console.log('Welcome, ' + username);
+			// no conflicting user name
+			// id ==> (name, isFree)
+			userList[socket.id] = {name: username, isFree: true};
 
-		// id ==> (name, isFree)
-		userList[socket.id] = {name: username, isFree: true};
+			// name ==> id
+			userToId[username] = socket.id; 
 
-		// TODO: handle conflicting names
-		// name ==> id
-		userToId[username] = socket.id; 
+			// notify user
+			io.to(socket.id).emit('user entry', username);
 
-		// send out available users' name to everyone
-		io.emit('available partners', getUserValues());
+			// send out available users' name to everyone
+			io.emit('available partners', getUserValues());
+		} else {
+			console.log('Username ' + username + ' is already taken.');
+			// conflicting user name
+			io.to(socket.id).emit('username taken', {});
+		}
+
 	});
 
 	socket.on('choose partner', function(name) {
@@ -75,7 +110,7 @@ io.on('connection', (socket) => {
 
 	socket.on('send message', function(msg) {
 		const partnerId = userToUser[socket.id];
-		const partnerName = userList[partnerId];
+		const partnerName = userList[partnerId].name;
 		console.log(userList[socket.id] + ' sent a message... to ' + partnerName);
 
 		// send to partner
@@ -85,13 +120,14 @@ io.on('connection', (socket) => {
 	});
 
   	socket.on('disconnect', () => {
-		console.log('User ' + userList[socket.id] + ' disconnected');
+  		const name = userList[socket.id] == null ? '' : userList[socket.id].name;
+		console.log('User ' + name + ' disconnected');
 
 		// no need to tell self
 
 		// tell partner (if any)
 		const partnerId = userToUser[socket.id];
-		if (partnerId) {
+		if (partnerId != null) {
 			// delete partner mappings
 			delete userToUser[partnerId];
 			delete userToUser[socket.id];

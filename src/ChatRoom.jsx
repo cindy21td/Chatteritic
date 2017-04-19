@@ -1,5 +1,11 @@
 import React from 'react';
 
+import {List, ListItem} from 'material-ui/List';
+import Divider from 'material-ui/Divider';
+import Paper from 'material-ui/Paper';
+import FlatButton from 'material-ui/FlatButton';
+import TextField from 'material-ui/TextField';
+
 export default class ChatBox extends React.Component {
 
 	static propTypes = {
@@ -24,6 +30,7 @@ export default class ChatBox extends React.Component {
 			partnerIsChosen: true,
 			partner: name
 		}));
+
 		this.props.socket.on('partner disconnect', () => this.exitRoom());
 
 		this.renderMsgList = this.renderMsgList.bind(this);
@@ -78,7 +85,8 @@ export default class ChatBox extends React.Component {
 	renderPartnerList() {
 		const users = [];
 		for (var item of this.state.partnersList) {
-			users.push(<div><button onClick={this.choosePartner.bind(null, item.name)} disabled={!item.isFree || item.name === this.props.username}>{item.name}</button></div>);
+			users.push(<ListItem onClick={this.choosePartner.bind(null, item.name)} disabled={!item.isFree || item.name === this.props.username} primaryText={item.name} />);
+			users.push(<Divider />)
 		}
 		return users
 	}
@@ -89,7 +97,7 @@ export default class ChatBox extends React.Component {
 			const className = msg[0] === 0 ? "mine" : "partners";
 			const speaker = msg[0] === 0 ? this.props.username : this.state.partner;
 
-			msgs.push(<p className={className}><label>{speaker}</label><span>{msg[1]}</span></p>);
+			msgs.push(<ListItem secondaryText={speaker} primaryText={msg[1]} />);
 		}
 		return msgs;
 	}
@@ -98,18 +106,19 @@ export default class ChatBox extends React.Component {
 		return (
 			<div>
 				{this.state.partnerIsChosen ? 
-					<div>
-						<input type="text" onChange={this.onMsgChange} value={this.state.currMsg} />
-						<button className="button" onClick={this.submitMsg}> Send </button>
-						<div>
+					<Paper zDepth={1} >
+						<TextField name="message" onChange={this.onMsgChange} value={this.state.currMsg} />
+						<FlatButton onClick={this.submitMsg} label="Send" />
+						<List>
 							{this.renderMsgList()}
-						</div>
-					</div>					
+						</List>
+					</Paper>					
 					:
-					<div>
-						<h1>User list:</h1>
+					<List>
+						<ListItem primaryText={"User list"} disabled={true}/>
+						<Divider />
 						{this.renderPartnerList()}
-					</div>
+					</List>
 				}
 			</div>
 		)
