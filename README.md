@@ -1,7 +1,4 @@
 # Quick guide
 
-## Start Server
+## Start Chat Service
 `npm start`
-
-## Start Client
-`node server.js`
