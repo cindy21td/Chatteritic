@@ -1,10 +1,17 @@
 import React from 'react';
 
+import Avatar from 'material-ui/Avatar';
+import ImageLens from 'material-ui/svg-icons/image/lens';
 import {List, ListItem} from 'material-ui/List';
 import Divider from 'material-ui/Divider';
 import Paper from 'material-ui/Paper';
 import FlatButton from 'material-ui/FlatButton';
+import Subheader from 'material-ui/Subheader';
 import TextField from 'material-ui/TextField';
+
+import {red500, green500} from 'material-ui/styles/colors';
+
+import RoomExitAlert from './RoomExitAlert.jsx';
 
 export default class ChatBox extends React.Component {
 
@@ -30,6 +37,11 @@ export default class ChatBox extends React.Component {
 			partnerIsChosen: true,
 			partner: name
 		}));
+		this.props.socket.on('partner exit', () => this.setState({
+			msgList: [],
+			partnerIsChosen: false,
+			partner: ''
+		}));
 
 		this.props.socket.on('partner disconnect', () => this.exitRoom());
 
@@ -39,9 +51,12 @@ export default class ChatBox extends React.Component {
 		this.onMsgChange = this.onMsgChange.bind(this);
 		this.submitMsg = this.submitMsg.bind(this);
 		this.choosePartner = this.choosePartner.bind(this);
+		this.exitRoom = this.exitRoom.bind(this);
 	}
 
 	exitRoom() {
+		this.props.socket.emit('exit room', this.state.partner);
+
 		this.setState({
 			msgList: [],
 			partnerIsChosen: false,
@@ -74,6 +89,9 @@ export default class ChatBox extends React.Component {
 	}
 
 	submitMsg() {
+		if (this.state.currMsg.trim() == '') {
+			return;
+		}
 		// emit to socket
 		this.props.socket.emit('send message', this.state.currMsg);
 
@@ -85,19 +103,41 @@ export default class ChatBox extends React.Component {
 	renderPartnerList() {
 		const users = [];
 		for (var item of this.state.partnersList) {
-			users.push(<ListItem onClick={this.choosePartner.bind(null, item.name)} disabled={!item.isFree || item.name === this.props.username} primaryText={item.name} />);
-			users.push(<Divider />)
+			if (item.name === this.props.username) {
+				continue;
+			}
+			
+			let avatar;
+			if (item.isFree) {
+				// user is available
+				avatar = (<Avatar icon={<ImageLens />} color={green500} />);
+			} else {
+				avatar = (<Avatar icon={<ImageLens />} color={red500} />);
+			}
+
+			users.push(<ListItem 
+							key={item.name}
+							rightAvatar={avatar} 
+							onTouchTap={this.choosePartner.bind(null, item.name)} 
+							onClick={this.choosePartner.bind(null, item.name)} 
+							disabled={item.isFree === "false"} 
+							primaryText={item.name} 
+						/>
+			);
+			users.push(<Divider key={"div-" + item.name}/>)
 		}
-		return users
+		return users;
 	}
 
 	renderMsgList() {
 		const msgs = [];
+		let idx = 0;
 		for (var msg of this.state.msgList) {
 			const className = msg[0] === 0 ? "mine" : "partners";
 			const speaker = msg[0] === 0 ? this.props.username : this.state.partner;
 
-			msgs.push(<ListItem secondaryText={speaker} primaryText={msg[1]} />);
+			msgs.push(<ListItem key={'msg-' + idx} secondaryText={speaker} primaryText={msg[1]} />);
+			idx += 1;
 		}
 		return msgs;
 	}
@@ -107,16 +147,30 @@ export default class ChatBox extends React.Component {
 			<div>
 				{this.state.partnerIsChosen ? 
 					<Paper zDepth={1} >
-						<TextField name="message" onChange={this.onMsgChange} value={this.state.currMsg} />
-						<FlatButton onClick={this.submitMsg} label="Send" />
+						<RoomExitAlert onConfirm={this.exitRoom}/>
 						<List>
 							{this.renderMsgList()}
 						</List>
+						<form onSubmit={(e) => {
+								e.preventDefault();
+								this.submitMsg();
+							}}
+						>
+							<TextField 
+								name="message" 
+								onChange={this.onMsgChange} 
+								value={this.state.currMsg} 
+							/>
+							<FlatButton 
+								onTouchTap={this.submitMsg} 
+								onClick={this.submitMsg} 
+								label="Send" 
+							/>
+						</form>
 					</Paper>					
 					:
-					<List>
-						<ListItem primaryText={"User list"} disabled={true}/>
-						<Divider />
+					<List style={{maxWidth: 350}}>
+						<Subheader>Chatters</Subheader>
 						{this.renderPartnerList()}
 					</List>
 				}

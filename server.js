@@ -111,12 +111,34 @@ io.on('connection', (socket) => {
 	socket.on('send message', function(msg) {
 		const partnerId = userToUser[socket.id];
 		const partnerName = userList[partnerId].name;
-		console.log(userList[socket.id] + ' sent a message... to ' + partnerName);
+		console.log(userList[socket.id].name + ' sent a message... to ' + partnerName);
 
 		// send to partner
 		io.to(partnerId).emit('receive message', [1, msg]);
 		// send to self
 		io.to(socket.id).emit('receive message', [0, msg]);
+	});
+
+	socket.on('exit room', function(partnerName) {
+		console.log(userList[socket.id].name + ' exiting to lobby...');
+
+		// tell partner
+		const partnerId = userToUser[socket.id];
+		delete userToUser[partnerId];
+
+		console.log('Notifying partner ' + userList[partnerId].name);
+
+		io.to(partnerId).emit('partner exit', {});
+
+		// remove userToUser mapping for current user
+		delete userToUser[socket.id];
+
+		// set both to free
+		userList[socket.id].isFree = true;
+		userList[partnerId].isFree = true;
+
+		// send out available users' name to everyone
+		io.emit('available partners', getUserValues());
 	});
 
   	socket.on('disconnect', () => {
@@ -137,7 +159,10 @@ io.on('connection', (socket) => {
 			io.to(partnerId).emit('partner disconnect', {});
 		}
 
-		delete userList[socket.id];
+		if (userList[socket.id] != null) {
+			delete userToId[userList[socket.id].name];
+			delete userList[socket.id];
+		}
 
 		// send out available users' name to everyone
 		io.emit('available partners', getUserValues());

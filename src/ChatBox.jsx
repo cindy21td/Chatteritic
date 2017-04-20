@@ -3,6 +3,10 @@ import ChatRoom from './ChatRoom.jsx';
 import ChatEntry from './ChatEntry.jsx';
 
 import AppBar from 'material-ui/AppBar';
+import Paper from 'material-ui/Paper';
+
+import injectTapEventPlugin from "react-tap-event-plugin";
+injectTapEventPlugin();
 
 import io from 'socket.io-client';
 
@@ -38,12 +42,23 @@ export default class ChatBox extends React.Component {
 	render() {
 		return (
 			<div>
-			  	<AppBar title={<span>Chatteritic</span>} />
+			  	<AppBar 
+			  		title={<span>Chatteritic</span>} 
+			  		showMenuIconButton={false} 
+			  	/>
+			  	<Paper style={{padding:20,textAllign:"center"}}>
 				{this.state.isInit ? 
-					<ChatRoom socket={socket} username={this.state.username} />
+					<ChatRoom 
+						socket={socket} 
+						username={this.state.username} 
+					/>
 					:
-					<ChatEntry onEnter={this.onUsernameEnter} nameIsTaken={this.state.nameIsTaken} />
+					<ChatEntry 
+						onEnter={this.onUsernameEnter} 
+						nameIsTaken={this.state.nameIsTaken} 
+					/>
 				}
+				</Paper>
 			</div>
 		)
 	}

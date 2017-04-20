@@ -16,8 +16,15 @@ export default class ChatEntry extends React.Component {
 			username: ''
 		}
 
+		this.onEnter = this.onEnter.bind(this);
+
 		this.onUsernameChange = this.onUsernameChange.bind(this);
 		this.onUsernameEnter = this.onUsernameEnter.bind(this);
+	}
+
+	onEnter(e) {
+		e.preventDefault();
+		this.onUsernameEnter();
 	}
 
 	onUsernameChange(e) {
@@ -27,16 +34,30 @@ export default class ChatEntry extends React.Component {
 	}
 
 	onUsernameEnter() {
-		this.props.onEnter(this.state.username);
+		if (this.state.username.trim() != "") {
+			this.props.onEnter(this.state.username.trim());
+		}
 	}
 
 
 	render() {
 		return (
-			<div>
-				<TextField name="username" floatingLabelText="Username" value={this.state.username} onChange={this.onUsernameChange} errorText={this.props.nameIsTaken ? "Username is already taken." : ''}/>
-				<FlatButton onClick={this.onUsernameEnter} label="Enter chat room" />
-			</div>
+			<form onSubmit={this.onEnter}>
+			<h1>Welcome</h1>
+			<p>Please enter your "chatter-name"</p>
+				<TextField 
+					name="username" 
+					floatingLabelText="Chatter-Name" 
+					value={this.state.username} 
+					onChange={this.onUsernameChange} 
+					errorText={this.props.nameIsTaken ? "Username is already taken." : ''}
+				/>
+				<FlatButton 
+					onTouchTap={this.onUsernameEnter} 
+					onClick={this.onUsernameEnter} 
+					label="Enter Lobby" 
+				/>
+			</form>
 		)
 	}
 }
