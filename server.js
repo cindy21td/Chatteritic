@@ -11,8 +11,10 @@ const path = require('path');
 
 /* eslint-disable no-console */
 
-const port = 3000;  
+//const port = 3000;  
 const app = express();  
+
+const port = process.env.PORT ? process.env.PORT : 5000;
 
 const compiler = webpack(webpackConfig);
 
