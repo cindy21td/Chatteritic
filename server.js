@@ -8,7 +8,6 @@ const webpack = require('webpack');
 const webpackConfig = require('./webpack.config.js');
 
 const path = require('path');
-const open = require('open');
 
 /* eslint-disable no-console */
 
